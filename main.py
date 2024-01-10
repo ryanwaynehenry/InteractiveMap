@@ -5,6 +5,7 @@ import pandas as pd
 import branca.colormap as cm
 import lookupCountyns
 import os
+import plotly
 
 hasValues = True
 data = {'Alachua, FL': 201.3, 'Baker, FL': 270.7,
@@ -57,12 +58,6 @@ def parse_county_state(input_string):
 
     return county, state
 
-def selectZoom(range):
-
-    if range < 9 and range > 6:
-        return 8
-    else:
-        return 5
 
 counties = [""] * dataLen
 states = [""] * dataLen
@@ -149,20 +144,28 @@ else:
 
 mergedProjected = merged.to_crs('EPSG:5070')
 
-mapX = mergedProjected.centroid.x.median()
-mapY = mergedProjected.centroid.y.median()
+mapX = merged.centroid.y.median()
+mapY = merged.centroid.x.median()
 
-rangeX = mergedProjected.centroid.x.max() - mergedProjected.centroid.x.min()
-rangeY = mergedProjected.centroid.y.max() - mergedProjected.centroid.y.min()
+minY, minX, _, _ = merged.bounds.min()
+_, _, maxY, maxX = merged.bounds.max()
+
+rangeX = maxX - minX
+rangeY = maxY - minY
+
+swCorner = [minX, minY]
+neCorner = [maxX, maxY]
 
 maxRange = max(rangeX, rangeY)
 
 print("The distance in x is %f", maxRange)
 
-zoomLevel = selectZoom(maxRange)
+zoomLevel = 10
 
-#m = folium.Map(location=[mapX, mapY], zoom_start=zoomLevel)
-m = folium.Map(location=[37.0902, -95.7129], zoom_start=5)
+m = folium.Map(location=[mapX, mapY], zoom_start=zoomLevel)
+#m = folium.Map(location=[37.0902, -95.7129], zoom_start=5)
+
+m.fit_bounds([swCorner, neCorner])
 
 folium.GeoJson(
     merged,
